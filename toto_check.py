@@ -1,21 +1,41 @@
-from datetime import datetime
+import requests
+from bs4 import BeautifulSoup
+
 def toto_check():
-    now = datetime.now()
-    date = now.strftime("%d %B %Y")
-    open(date + ' TOTO Results.txt', 'w').close()
-    draw_results = set(input("Enter the draw results(comma separated): ").split(","))
+    url = "https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx"
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    draw_results = []
+
+    for winning_numbers in soup.find_all('td', width="16%"):
+        draw_results.append(winning_numbers.text)
+
+    additional_number = soup.find('td', class_='additional').text
+    draw_results.append(additional_number)
+
+    draw_results = ','.join(draw_results)
+    draw_results = set(draw_results.split(","))
     draw_results = {int(i) for i in draw_results}
-    with open(date + ' TOTO Results.txt', 'a+', encoding='utf-8') as f_out:
-        f_out.write("Draw results: " + str(draw_results) + "\n")
-        with open("numbers.txt", "r") as f_in:
-            for line in f_in:
-                ticket_numbers = set(line.strip().split(","))
-                ticket_numbers = {int(i) for i in ticket_numbers}
-                match = draw_results.intersection(ticket_numbers)
-                counter = len(match)
-                f_out.write("Ticket Number: " + str(ticket_numbers) + "\n")
-                f_out.write("Number of matches: " + str(counter) + "\n")
-                match = match if counter > 0 else "none"
-                f_out.write("Matched numbers: " + str(match) + "\n\n")
+    print("\nDraw results: ", draw_results)
+
+    with open("numbers.txt", "r") as f:
+        for line in f:
+            ticket_numbers = set(line.strip().split(","))
+            ticket_numbers = {int(i) for i in ticket_numbers}
+            match = draw_results.intersection(ticket_numbers)
+            counter = len(match)
+            print("Ticket Number: ", ticket_numbers)
+            match = match if counter > 0 else "{}"
+            print("Matched numbers: ", match)
+            if counter == 3:
+                print("\033[0;32m" + "3 Matches!" + "\033[00m")
+            elif counter == 4:
+                print("\033[0;32m" + "4 Matches!" + "\033[00m")
+            elif counter == 5:
+                print("\033[0;32m" + "5 Matches!" + "\033[00m")
+            elif counter == 6:
+                print("\033[0;32m" + "Time to buy a lambo!" + "\033[00m")
+            print()
 
 toto_check()
