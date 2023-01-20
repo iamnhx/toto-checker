@@ -2,31 +2,25 @@ import requests
 from bs4 import BeautifulSoup
 
 def toto_check():
-    url = "https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx"
+    url = "https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx?sppl=RHJhd051bWJlcj0zODM1"
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    draw_results = []
+    draw_results = set()
 
     for winning_numbers in soup.find_all('td', width="16%"):
-        draw_results.append(winning_numbers.text)
+        draw_results.update(map(int, winning_numbers.text.split(',')))
 
     additional_number = soup.find('td', class_='additional').text
-    draw_results.append(additional_number)
-
-    draw_results = ','.join(draw_results)
-    draw_results = set(draw_results.split(","))
-    draw_results = {int(i) for i in draw_results}
-    print("\nDraw results: ", draw_results)
+    draw_results.add(int(additional_number))
 
     with open("numbers.txt", "r") as f:
         for line in f:
-            ticket_numbers = set(line.strip().split(","))
-            ticket_numbers = {int(i) for i in ticket_numbers}
+            ticket_numbers = set(map(int, line.strip().split(",")))
             match = draw_results.intersection(ticket_numbers)
             counter = len(match)
-            print("Ticket Number: ", ticket_numbers)
             match = match if counter > 0 else "{}"
+            print("Ticket Numbers: ", ticket_numbers)
             print("Matched numbers: ", match)
             if counter == 3:
                 print("\033[0;32m" + "3 Matches!" + "\033[00m")
